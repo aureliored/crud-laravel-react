@@ -1,0 +1,28 @@
+{
+  "data": [
+    {
+      "id": "1001",
+      "name": "Usuario 1",
+      "cpf": "934.266.540-32",
+      "phone": "(85) 989222020",
+      "pass": "bazinga",
+      "birthdate": "23/11/1987"
+    },
+    {
+      "id": "1002",
+      "name": "Usuario 2",
+      "cpf": "903.957.520-78",
+      "phone": "(85) 989222020",
+      "pass": "bazinga",
+      "birthdate": "26/09/2019"
+    },
+    {
+      "id": "1029",
+      "name": "Usuario 3",
+      "cpf": "619.857.430-00",
+      "phone": "(85) 989222020",
+      "pass": "bazinga",
+      "birthdate": "29/06/1996"
+    }
+  ]
+}

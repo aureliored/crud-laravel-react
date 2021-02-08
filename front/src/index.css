@@ -11,3 +11,42 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+
+
+.datatable-users .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.datatable-users .product-image {
+    width: 100px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+}
+
+.datatable-users .p-dialog .product-image {
+    width: 150px;
+    margin: 0 auto 2rem auto;
+    display: block;
+}
+
+.datatable-users .confirmation-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ReactModal__Content {
+    width: 320px;
+    height: 530px;
+    margin: 10px auto;
+}
+
+.ReactModal__Content_dell {
+  width: 500px;
+height: 200px;
+margin: 10px auto;
+padding: 10px;
+border: 2px solid #3e3d3d63;
+}
