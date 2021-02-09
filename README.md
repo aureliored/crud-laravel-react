@@ -36,5 +36,3 @@ yarn start
 ## Meta
 
 Aurélio Moreira – aureliomoreirared@gmail.com
-
-[https://github.com/yourname/github-link](https://github.com/dbader/)
