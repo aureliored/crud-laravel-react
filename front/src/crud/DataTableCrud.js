@@ -7,7 +7,6 @@ import 'primeflex/primeflex.css';
 import ReactDOM from "react-dom";
 import ReactModal from 'react-modal';
 
-import toast, { Toaster } from 'react-hot-toast';
 
 import React, { useState, useEffect, useRef } from "react";
 import classNames from "classnames";
@@ -30,16 +29,17 @@ const DataTableUser = () => {
   const [users, setUsers] = useState(null);
   const [openModalUser, setOpenModalUser] = useState(false);
   const [openModalUserDelete, setOpenModalUserDelete] = useState(false);
-  const [openModalUsersDelete, setOpenModalUsersDelete] = useState(false);
   const [user, setUser] = useState(emptyUser);
   const [selectedUsers, setSelectedUsers] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [globalFilter, setGlobalFilter] = useState(null);
-  const toast = useRef(null);
   const dt = useRef(null);
   const userService = new UserService();
 
-  useEffect(() => { userService.getUsers().then((data) => setUsers(data));}, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    userService.getUsers().then((data) => setUsers(data));
+  }, []); //eslint-disable-line react-hooks/exhaustive-deps
 
   const openNew = () => {
     setUser(emptyUser);
@@ -47,44 +47,79 @@ const DataTableUser = () => {
     setOpenModalUser(true);
   };
 
-
-  const hideModalUser = () => {
-    setOpenModalUser(false);
-  }
-  const showModalUser = () => {
-    setOpenModalUser(true);
-  }
-
-  const hideModalUserDelete = () => {
-    setOpenModalUserDelete(false);
-  }
-  const showModalUserDelete = () => {
-    setOpenModalUserDelete(true);
+  const hideModal = (save) => {
+    if(save === true){
+      setOpenModalUser(false);
+    }else{
+      setOpenModalUserDelete(false);
+    }
   }
 
-  const hideModalUsersDelete = () => {
-    setOpenModalUsersDelete(false);
-  }
-  const showModalUsersDelete = () => {
-    setOpenModalUsersDelete(true);
-  }
+  /**
+  * Service
+  */
 
   const saveUser = () => {
     let _user = { ...user };
-    let _users = [...users];
+    let error = false;
 
     if (user.id) {
-      const index = findIndexById(user.id);
-      _users[index] = _user;
+      userService.updateUsers(_user,user.id)
+        .then((data) => {
+          console.log(data.data.response);
+          if(data.data.response !== 'success'){
+            error = true;
+          }
+        }).finally(() => {
+          userService.getUsers().then((data) => setUsers(data));
+          returnRequest(error,1)
+        });
     }else{
-      _user.id = createId();
-      _users.push(_user);
+      userService.createUsers(_user)
+        .then((data) => {
+          if(data.data.response !== 'success'){
+            error = true;
+          }
+        }).finally(() => {
+          userService.getUsers().then((data) => setUsers(data));
+          returnRequest(error,1)
+        });
     }
 
-    setUsers(_users);
     setOpenModalUser(false);
     setUser(emptyUser);
   };
+
+  const deleteUser = () => {
+    let _user = { ...user };
+    let error = false;
+
+    userService.deleteUsers(_user.id)
+      .then((data) => {
+        console.log(data.data.response);
+        if(data.data.response !== 'success'){
+          error = true;
+        }
+      }).finally(() => {
+        userService.getUsers().then((data) => setUsers(data));
+        returnRequest(error)
+      });
+    setOpenModalUserDelete(false);
+    setSelectedUsers(null);
+  };
+
+  const returnRequest = (error, tipo) => {
+    let message = {
+      save: "Operação concluida com sucesso!",
+      error: "Ops! Algo deu errado. Entre em contato com o administrador do sistema."
+    };
+    if(error === false){
+      alert(message.save);
+    }else{
+      alert(message.error);
+    }
+  };
+
 
   const editUser = (user) => {
     setUser({ ...user });
@@ -96,34 +131,6 @@ const DataTableUser = () => {
     setOpenModalUserDelete(true);
   };
 
-  const deleteUser = () => {
-    let _users = users.filter((val) => val.id !== user.id);
-    setUsers(_users);
-    setOpenModalUserDelete(false);
-    setUser(emptyUser);
-    alert('Usuário deletado.')
-  };
-
-  const deleteSelectedUsers = () => {
-    let _users = users.filter((val) => !selectedUsers.includes(val));
-    setUsers(_users);
-    setOpenModalUsersDelete(false);
-    setSelectedUsers(null);
-    alert('Usuários deletados');
-  };
-
-  const findIndexById = (id) => {
-    let index = -1;
-    for (let i = 0; i < users.length; i++) {
-      if (users[i].id === id) {
-        index = i;
-        break;
-      }
-    }
-
-    return index;
-  };
-
   const onInputChange = (e, name) => {
         const val = (e.target && e.target.value) || '';
         let _user = {...user};
@@ -132,42 +139,18 @@ const DataTableUser = () => {
         setUser(_user);
     }
 
-  const createId = () => {
-    let id = "";
-    let chars =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    for (let i = 0; i < 5; i++) {
-      id += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return id;
-  };
-
   const exportCSV = () => {
     dt.current.exportCSV();
   };
 
-  const confirmDeleteSelected = () => {
-    setOpenModalUsersDelete(true);
-  };
-
-
-
   const leftToolbarTemplate = () => {
     return (
       <React.Fragment>
-        <Toaster/>
         <Button
           label="Novo"
           icon="pi pi-plus"
           className="p-button-success p-mr-2"
           onClick={openNew}
-        />
-        <Button
-          label="Deletar"
-          icon="pi pi-trash"
-          className="p-button-danger"
-          onClick={confirmDeleteSelected}
-          disabled={!selectedUsers || !selectedUsers.length}
         />
       </React.Fragment>
     );
@@ -219,8 +202,6 @@ const DataTableUser = () => {
 
   return (
     <div className="datatable-users">
-      <Toaster  />
-
       <div className="card">
         <Toolbar
           className="p-mb-4"
@@ -242,10 +223,7 @@ const DataTableUser = () => {
           globalFilter={globalFilter}
           header={header}
         >
-          <Column
-            selectionMode="multiple"
-            headerStyle={{ width: "3rem" }}
-          ></Column>
+
           <Column field="name" header="Nome" sortable></Column>
           <Column field="cpf" header="CPF/CNPJ" sortable></Column>
           <Column field="phone" header="Telefone" sortable></Column>
@@ -343,7 +321,7 @@ const DataTableUser = () => {
               label="Cancelar"
               icon="pi pi-times"
               className="p-button-text"
-              onClick={hideModalUser}
+              onClick={() => {hideModal(true)}}
             />
             <Button
               label="Salvar"
@@ -368,34 +346,13 @@ const DataTableUser = () => {
               label="Não"
               icon="pi pi-times"
               className="p-button-text"
-              onClick={hideModalUserDelete}
+              onClick={() => {hideModal(false)}}
             />
             <Button
               label="Sim"
               icon="pi pi-check"
               className="p-button-text"
               onClick={deleteUser}
-            />
-          </React.Fragment>
-        </ReactModal>
-
-        <ReactModal className="ReactModal__Content_dell" isOpen={openModalUsersDelete}>
-          <h3>Deletar usuários</h3>
-          <div className="confirmation-content">
-            {user && <span>Tem certeza que deseja deletar esses usuários?</span>}
-          </div>
-          <React.Fragment>
-            <Button
-              label="Não"
-              icon="pi pi-times"
-              className="p-button-text"
-              onClick={hideModalUsersDelete}
-            />
-            <Button
-              label="Sim"
-              icon="pi pi-check"
-              className="p-button-text"
-              onClick={deleteSelectedUsers}
             />
           </React.Fragment>
         </ReactModal>

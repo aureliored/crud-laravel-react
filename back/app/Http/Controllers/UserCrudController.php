@@ -37,19 +37,22 @@ class UserCrudController extends Controller
      */
     public function store(Request $request)
     {
-      $request->validate($this->defaultValidate);
-
-      $userCrud = new UserCrud([
-          'name' => $request->get('name'),
-          'cpf' => $request->get('cpf'),
-          'phone' => $request->get('phone'),
-          'pass' => $request->get('pass'),
-          'birthdate' => $request->get('birthdate')
+      $data = $this->getDataRequest($request);
+      $newUser = new UserCrud([
+          'name' => $data['name'],
+          'cpf' => $data['cpf'],
+          'phone' => $data['phone'],
+          'pass' => $data['pass'],
+          'birthdate' => $data['birthdate']
       ]);
+
+      $userCrud = $newUser;
       $userCrud->save();
       return response()->json([
           'response' => 'success',
       ]);
+
+      // return response()->json($data['name']);
     }
 
     /**
@@ -78,14 +81,13 @@ class UserCrudController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $request->validate($this->defaultValidate);
-
+        $data = $this->getDataRequest($request);
         $userCrud = UserCrud::find($id);
-        $userCrud->name =  $request->get('name');
-        $userCrud->cpf = $request->get('cpf');
-        $userCrud->phone = $request->get('phone');
-        $userCrud->pass = $request->get('pass');
-        $userCrud->birthdate = $request->get('birthdate');
+        $userCrud->name =  $data['name'];
+        $userCrud->cpf = $data['cpf'];
+        $userCrud->phone = $data['phone'];
+        $userCrud->pass = $data['pass'];
+        $userCrud->birthdate = $data['birthdate'];
         $userCrud->save();
         return response()->json([
            'response' => 'success',
@@ -106,5 +108,10 @@ class UserCrudController extends Controller
       return response()->json([
           'response' => 'success',
       ]);
+    }
+
+    private function getDataRequest($request)
+    {
+      return json_decode($request->getContent(), true)['User'];
     }
 }
