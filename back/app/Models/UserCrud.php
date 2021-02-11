@@ -14,4 +14,14 @@ class UserCrud extends Model
       'pass',
       'birthdate',
     ];
+
+    public function getBirthdateAttribute($value)
+    {
+      return implode('/',array_reverse(explode('-',$value)));
+    }
+
+    public function setBirthdateAttribute($value)
+    {
+      $this->attributes['birthdate'] = implode('-',array_reverse(explode('/',$value)));
+    }
 }
