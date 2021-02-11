@@ -3,22 +3,27 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@react-br-forms/cpf-cnpj-mask": "^1.0.6",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
     "axios": "^0.21.1",
     "classnames": "^2.2.6",
+    "formik": "^2.2.6",
     "primeflex": "^2.0.0",
     "primeicons": "^4.1.0",
     "primereact": "^6.0.2",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
+    "react-hook-form": "^6.15.1",
     "react-hot-toast": "^1.0.2",
+    "react-input-mask": "^3.0.0-alpha.2",
     "react-modal": "^3.12.1",
     "react-scripts": "4.0.2",
     "react-toast-notifications": "^2.4.0",
     "react-transition-group": "^1.2.1",
-    "web-vitals": "^1.0.1"
+    "web-vitals": "^1.0.1",
+    "yup": "^0.32.8"
   },
   "scripts": {
     "start": "react-scripts start",

@@ -2,14 +2,10 @@ import "primeicons/primeicons.css";
 import "primereact/resources/themes/saga-blue/theme.css";
 import "primereact/resources/primereact.css";
 import 'primeflex/primeflex.css';
-// import "../index.css";
-// import "./DataTable.css";
 import ReactDOM from "react-dom";
 import ReactModal from 'react-modal';
 
-
 import React, { useState, useEffect, useRef } from "react";
-import classNames from "classnames";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
@@ -17,7 +13,12 @@ import { Toolbar } from "primereact/toolbar";
 import { InputText } from "primereact/inputtext";
 import UserService from "../service/UserService";
 
+import { Formik, Field, Form, ErrorMessage } from 'formik';
+import * as Yup from 'yup';
+
+
 const DataTableUser = () => {
+
   const emptyUser = {
     id: null,
     name: "",
@@ -26,12 +27,13 @@ const DataTableUser = () => {
     pass: "",
     birthdate: ""
   };
+
   const [users, setUsers] = useState(null);
   const [openModalUser, setOpenModalUser] = useState(false);
   const [openModalUserDelete, setOpenModalUserDelete] = useState(false);
   const [user, setUser] = useState(emptyUser);
   const [selectedUsers, setSelectedUsers] = useState(null);
-  const [submitted, setSubmitted] = useState(false);
+
   const [globalFilter, setGlobalFilter] = useState(null);
   const dt = useRef(null);
   const userService = new UserService();
@@ -43,7 +45,6 @@ const DataTableUser = () => {
 
   const openNew = () => {
     setUser(emptyUser);
-    setSubmitted(false);
     setOpenModalUser(true);
   };
 
@@ -55,56 +56,101 @@ const DataTableUser = () => {
     }
   }
 
+  const cpfMask = value => {
+    var x = value
+            .replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,3})(\d{0,2})/);
+    return !x[2] ? x[1] : x[1] + '.' + x[2] + '.' + x[3] + '-' + x[4] ;
+  };
+
+  const phoneMask = value => {
+    var x = value
+            .replace(/\D/g, '').match(/(\d{0,2})(\d{0,1})(\d{0,4})(\d{0,4})/);
+    return '(' + (!x[2] ? x[1] : x[1]) + ')' + x[2] + ' ' + x[3] + '.' + x[4] ;
+  };
+
+  const dateMask = value => {
+    var x = value
+            .replace(/\D/g, '').match(/(\d{0,2})(\d{0,2})(\d{0,4})/);
+    return !x[2] ? x[1] : x[1] + '/' + x[2] + '/' + x[3] ;
+  };
+  const cnpjMask = value => {
+    var x = value
+            .replace(/\D/g, '').match(/(\d{0,2})(\d{0,3})(\d{0,3})(\d{0,4})(\d{0,2})/);
+    return !x[2] ? x[1] : x[1] + '.' + x[2] + '.' + x[3] + '/' + x[4] + (x[5] ? '-' + x[5] : '');
+  };
+
+  const maskField = (e) => {
+    let value = e.target.value;
+    let name = e.target.name;
+    if(name === 'cpf'){
+
+      if(value.length <= 14){
+        console.log('cpf')
+        e.target.value = cpfMask(e.target.value);
+      }else if (value.length > 14) {
+        console.log('cnpj')
+        e.target.value = cnpjMask(e.target.value);
+      }
+    }
+
+    if(name === 'phone') {
+      e.target.value = phoneMask(e.target.value);
+    }
+
+    if(name === 'birthdate') {
+      e.target.value = dateMask(e.target.value);
+    }
+  }
+
   /**
   * Service
   */
 
-  const saveUser = () => {
-    let _user = { ...user };
-    let error = false;
+  const saveUser = (user) => {
 
     if (user.id) {
-      userService.updateUsers(_user,user.id)
+      userService.updateUsers(user,user.id)
         .then((data) => {
-          console.log(data.data.response);
           if(data.data.response !== 'success'){
-            error = true;
+            returnRequest(true,1)
           }
         }).finally(() => {
           userService.getUsers().then((data) => setUsers(data));
-          returnRequest(error,1)
+          returnRequest(false,1)
+          setOpenModalUser(false);
         });
     }else{
-      userService.createUsers(_user)
+      userService.createUsers(user)
         .then((data) => {
           if(data.data.response !== 'success'){
-            error = true;
+            returnRequest(true,1)
           }
         }).finally(() => {
           userService.getUsers().then((data) => setUsers(data));
-          returnRequest(error,1)
+          returnRequest(false,1)
+          setOpenModalUser(false);
         });
     }
 
-    setOpenModalUser(false);
+
     setUser(emptyUser);
   };
 
   const deleteUser = () => {
     let _user = { ...user };
-    let error = false;
 
     userService.deleteUsers(_user.id)
       .then((data) => {
         console.log(data.data.response);
         if(data.data.response !== 'success'){
-          error = true;
+          returnRequest(true)
         }
       }).finally(() => {
         userService.getUsers().then((data) => setUsers(data));
-        returnRequest(error)
+        setOpenModalUserDelete(false);
+        returnRequest(false)
       });
-    setOpenModalUserDelete(false);
+
     setSelectedUsers(null);
   };
 
@@ -131,13 +177,7 @@ const DataTableUser = () => {
     setOpenModalUserDelete(true);
   };
 
-  const onInputChange = (e, name) => {
-        const val = (e.target && e.target.value) || '';
-        let _user = {...user};
-        _user[`${name}`] = val;
 
-        setUser(_user);
-    }
 
   const exportCSV = () => {
     dt.current.exportCSV();
@@ -152,6 +192,7 @@ const DataTableUser = () => {
           className="p-button-success p-mr-2"
           onClick={openNew}
         />
+
       </React.Fragment>
     );
   };
@@ -200,7 +241,9 @@ const DataTableUser = () => {
     </div>
   );
 
+
   return (
+
     <div className="datatable-users">
       <div className="card">
         <Toolbar
@@ -236,101 +279,75 @@ const DataTableUser = () => {
 
           <Column body={actionBodyTemplate}></Column>
         </DataTable>
+        <ReactModal className="ReactModal__Content" isOpen={openModalUser}>
+          <Formik
+            initialValues={user}
+            enableReinitialize
+            validationSchema={Yup.object({
+              name: Yup.string()
+               .required('O nome é obrigatório'),
+             cpf: Yup.string()
+               .required('O campo CPF/CNPJ é obrigatório'),
+             phone: Yup.string()
+               .required('O telefone é obrigatório'),
+             pass: Yup.string()
+               .required('A senha é obrigatório'),
+             birthdate: Yup.string()
+               .required('A data de nacimento é obrigatória'),
+            })}
+            onSubmit={(values, { setSubmitting }) => {
+              saveUser(values);
+            }}
+          >
 
+            <Form>
+            <div className="p-fluid">
+                <div className="p-field">
+                <label htmlFor="name" >Nome</label>
+                <Field name="name" default={user.name} type="text" />
+                <ErrorMessage name="name" />
+                </div>
+                <div className="p-field">
+                <label htmlFor="cpf" >CPF/CNPJ</label>
+                <Field name="cpf" type="text" onKeyUp={e => maskField(e)} placeholder="___.___.___-__" />
+                <ErrorMessage name="cpf" />
+                </div>
+                <div className="p-field">
 
-        <ReactModal isOpen={openModalUser}>
-          <h3>Detalhes do usuário</h3>
-          <div className="p-fluid">
-            <div className="p-field">
-                     <label htmlFor="name">Name</label>
-                     <InputText
-                       id="name"
-                       value={user.name}
-                       onChange={(e) => onInputChange(e, "name")}
-                       required
-                       autoFocus
-                       className={classNames({ "p-invalid": submitted && !user.name })}
-                     />
-                     {submitted && !user.name && (
-                       <small className="p-error">Por favor informe o nome.</small>
-                     )}
-            </div>
-            <div className="p-field">
-                     <label htmlFor="cpf">CPF/CNPJ</label>
-                     <InputText
-                       id="cpf"
-                       value={user.cpf}
-                       onChange={(e) => onInputChange(e, "cpf")}
-                       required
-                       autoFocus
-                       className={classNames({ "p-invalid": submitted && !user.cpf })}
-                     />
-                     {submitted && !user.cpf && (
-                       <small className="p-error">Por favor informe o CPF ou CNPJ.</small>
-                     )}
-            </div>
-            <div className="p-field">
-                     <label htmlFor="phone">Telefone</label>
-                     <InputText
-                       id="phone"
-                       value={user.phone}
-                       onChange={(e) => {onInputChange(e, "phone")}}
-                       required
-                       autoFocus
-                       className={classNames({ "p-invalid": submitted && !user.phone })}
-                     />
-                     {submitted && !user.phone && (
-                       <small className="p-error">Por favor informe o telefone.</small>
-                     )}
-            </div>
-            <div className="p-field">
-                     <label htmlFor="pass">Senha</label>
-                     <InputText
-                       id="pass"
-                       value={user.pass}
-                       onChange={(e) => onInputChange(e, "pass")}
-                       required
-                       autoFocus
-                       className={classNames({ "p-invalid": submitted && !user.pass })}
-                     />
-                     {submitted && !user.pass && (
-                       <small className="p-error">Por favor informe a senha.</small>
-                     )}
-            </div>
-            <div className="p-field">
-                     <label htmlFor="birthdate">Data de nacimento</label>
-                     <InputText
-                       id="birthdate"
-                       value={user.birthdate}
-                       onChange={(e) => onInputChange(e, "birthdate")}
-                       required
-                       autoFocus
-                       className={classNames({
-                         "p-invalid": submitted && !user.birthdate
-                       })}
-                     />
-                     {submitted && !user.birthdate && (
-                       <small className="p-error">
-                         Por favor informe a data de nacimento.
-                       </small>
-                     )}
-            </div>
-          </div>
-          <React.Fragment>
-            <Button
-              label="Cancelar"
-              icon="pi pi-times"
-              className="p-button-text"
-              onClick={() => {hideModal(true)}}
-            />
-            <Button
-              label="Salvar"
-              icon="pi pi-check"
-              className="p-button-text"
-              onClick={saveUser}
-            />
-          </React.Fragment>
+                <label htmlFor="phone" >Telefone</label>
+                <Field name="phone" onKeyUp={e => maskField(e)} placeholder="(__)_________" type="text" />
+                <ErrorMessage name="phone" />
+                </div>
+                <div className="p-field">
+                <label htmlFor="pass">Senha</label>
+                <Field name="pass" type="text" />
+                <ErrorMessage name="pass" />
+                </div>
+                <div className="p-field">
+                <label htmlFor="birthdate">Data de nacimento</label>
+                <Field name="birthdate" onKeyUp={e => maskField(e)} type="text" />
+                <ErrorMessage name="birthdate" />
+                </div>
+
+              </div>
+              <React.Fragment>
+                <Button
+                  label="Cancelar"
+                  icon="pi pi-times"
+                  className="p-button-text"
+                  onClick={() => {hideModal(true)}}
+                />
+                <Button
+                  label="Salvar"
+                  icon="pi pi-check"
+                  className="p-button-text"
+                  type="submit"
+                />
+              </React.Fragment>
+            </Form>
+          </Formik>
         </ReactModal>
+
 
         <ReactModal className="ReactModal__Content_dell" isOpen={openModalUserDelete}>
           <h3>Deletar usuário</h3>
